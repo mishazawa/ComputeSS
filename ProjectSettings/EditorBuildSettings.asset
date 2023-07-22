@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Base.unity
     guid: 08d0f975260ac51448a6a5e5cfc12fa1
   - enabled: 1
-    path: Assets/01_Compute_Texture/01_1_Basic/ComputeUAVTexture.unity
+    path: Assets/ComputeUAVTexture.unity
     guid: 1f2ba23256a10664984befabb2475ddc
   - enabled: 1
     path: Assets/01_Compute_Texture/01_2_FallingSand/ComputeUAVTexFlow.unity
@@ -114,4 +114,3 @@ EditorBuildSettings:
     path: Assets/06_Compute_Mesh/06_5_VFXGraphMeshDeform/VFXGraphMeshDeform.unity
     guid: cb8d545472f591743a855ab30ead482c
   m_configObjects: {}
-  m_UseUCBPForAssetBundles: 0
