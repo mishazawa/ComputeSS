@@ -1,0 +1,31 @@
+#pragma kernel ComputeFluid
+
+#define DAMPING .995
+#define AMPLITUDE 2
+
+Texture2D<float4> InputBuffer;
+SamplerState samplerInputBuffer;
+RWTexture2D<float4> OutputBuffer;
+
+float2 mouse;
+float2 resolution;
+
+[numthreads(8, 8, 1)]
+void ComputeFluid (uint3 id : SV_DispatchThreadID)
+{
+    float2 offset    = float2(1 / resolution.x, 0);
+    float2 uv        = float2(id.xy) / resolution;
+    float2 cursor    = (mouse + .5);
+
+    float  dist      = distance(uv, cursor);
+
+    float4 data      = InputBuffer.SampleLevel(samplerInputBuffer, uv, 0);
+    float4 dataLeft  = InputBuffer.SampleLevel(samplerInputBuffer, uv - offset, 0);
+    float4 dataRight = InputBuffer.SampleLevel(samplerInputBuffer, uv + offset, 0);
+
+    float newValue  = dataLeft.x + dataRight.x - data.y;
+
+    newValue += smoothstep(dist, 0, 0.25);
+
+    OutputBuffer[id.xy] = float4(newValue * DAMPING, data.x, 0, 0);
+}
