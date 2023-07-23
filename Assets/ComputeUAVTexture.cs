@@ -68,7 +68,7 @@ public class ComputeUAVTexture : MonoBehaviour
 	void RunSimulationStep() {
 		if (nextUpdate <= Time.time) {
 			nextUpdate += Mathf.Abs(simSpeed);
-		
+			cs.SetFloat("iTime", Time.time);
 			cs.Dispatch(ComputeFluid, groupSize, 1, 1);
 		}
 	}

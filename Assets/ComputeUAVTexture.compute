@@ -1,7 +1,8 @@
 #pragma kernel ComputeFluid
 
-#define DAMPING .99
+#define DAMPING .95
 #define AMPLITUDE .5
+#define mod(x, y) (x - y * floor(x / y))
 
 Texture2D<float4> InputBuffer;
 SamplerState samplerInputBuffer;
@@ -10,23 +11,13 @@ RWTexture2D<float4> OutputBuffer;
 float3 mouse = float3(0, 0, 0);
 float2 resolution = float2(32, 1);
 bool action = false;
+float iTime = 0;
 
-float2 onClick(float3 mouse) {
-    if (mouse.z > 0.) return mouse.xy;
-  	return float2(.0, .0);
-}
 
-float cubicPulse( float c, float w, float x ){
-    x = abs(x - c);
-    if( x>w ) return 0.0;
-    x /= w;
-    return 1. - x*x*(3.0-2.0*x);
-}
-
-float plot(float2 st, float pct){
-  return  smoothstep( pct-0.02, pct, st.y) -
-          smoothstep( pct, pct+0.02, st.y);
-}
+float noise(float2 uv);
+float2 onClick(float3 mouse);
+float cubicPulse(float c, float w, float x);
+float plot(float2 st, float pct);
 
 [numthreads(32, 1, 1)]
 void ComputeFluid (uint3 id : SV_DispatchThreadID)
@@ -46,9 +37,47 @@ void ComputeFluid (uint3 id : SV_DispatchThreadID)
     float attack = 0;
     
     if (cursor.x > 0.) {
-        attack = 1 - plot(uv, cubicPulse(cursor.x, 0.1, uv.x));
-        
+        attack = 1 - plot(uv, cubicPulse(cursor.x, 0.01, uv.x));
     }
 
+    newValue += noise(uv * 10. + iTime) + noise(uv * 1000. - iTime)* .5;
+
     OutputBuffer[id.xy] = float4(newValue * DAMPING, nextValue + attack, 0, 1);
+}
+
+
+float hash(float x)
+{
+	return frac(sin(cos(x*12.13)*19.123)*17.321);
+}
+
+
+float noise(float2 p)
+{
+	float2 pm = mod(p,1.0);
+	float2 pd = p-pm;
+	float v0=hash(pd.x+pd.y*41.0);
+	float v1=hash(pd.x+1.0+pd.y*41.0);
+	float v2=hash(pd.x+pd.y*41.0+41.0);
+	float v3=hash(pd.x+pd.y*41.0+42.0);
+	v0 = lerp(v0,v1,smoothstep(0.0,1.0,pm.x));
+	v2 = lerp(v2,v3,smoothstep(0.0,1.0,pm.x));
+	return lerp(v0,v2,smoothstep(0.0,1.0,pm.y));
+}
+
+float2 onClick(float3 mouse) {
+    if (mouse.z > 0.) return mouse.xy;
+  	return float2(.0, .0);
+}
+
+float cubicPulse( float c, float w, float x ){
+    x = abs(x - c);
+    if( x>w ) return 0.0;
+    x /= w;
+    return 1. - x*x*(3.0-2.0*x);
+}
+
+float plot(float2 st, float pct){
+  return  smoothstep( pct-0.02, pct, st.y) -
+          smoothstep( pct, pct+0.02, st.y);
 }
