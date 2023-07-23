@@ -50,15 +50,14 @@ Shader "Unlit/MaskShader"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                // sample the texture
                 float2 uv = i.uv;
-                // uv.y = 0;
+                // sample the texture
                 fixed4 val = tex2D(_MainTex, uv);
 
-                // uv.y += .5;
+                uv.y -= .5;
+                uv.y *= 800.;
 
-
-                //  val = plot(uv, val.x);
+                val = plot(uv, val.x);
 
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, val);

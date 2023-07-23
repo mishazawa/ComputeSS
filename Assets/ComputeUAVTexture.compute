@@ -1,23 +1,29 @@
 #pragma kernel ComputeFluid
 
-#define DAMPING .995
-#define AMPLITUDE 2
+#define DAMPING .99
+#define AMPLITUDE .5
 
 Texture2D<float4> InputBuffer;
 SamplerState samplerInputBuffer;
 RWTexture2D<float4> OutputBuffer;
 
-float2 mouse;
-float2 resolution;
+float2 mouse = float2(0, 0);
+float2 resolution = float2(32, 1);
+bool action = false;
 
-[numthreads(8, 8, 1)]
+float cubicPulse( float c, float w, float x ){
+    x = abs(x - c);
+    if( x>w ) return 0.0;
+    x /= w;
+    return 1. - x*x*(3.0-2.0*x);
+}
+
+[numthreads(32, 1, 1)]
 void ComputeFluid (uint3 id : SV_DispatchThreadID)
 {
     float2 offset    = float2(1 / resolution.x, 0);
     float2 uv        = float2(id.xy) / resolution;
     float2 cursor    = (mouse + .5);
-
-    float  dist      = distance(uv, cursor);
 
     float4 data      = InputBuffer.SampleLevel(samplerInputBuffer, uv, 0);
     float4 dataLeft  = InputBuffer.SampleLevel(samplerInputBuffer, uv - offset, 0);
@@ -25,7 +31,9 @@ void ComputeFluid (uint3 id : SV_DispatchThreadID)
 
     float newValue  = dataLeft.x + dataRight.x - data.y;
 
-    newValue += smoothstep(dist, 0, 0.25);
+    float nextValue = data.x;
 
-    OutputBuffer[id.xy] = float4(newValue * DAMPING, data.x, 0, 0);
+    float attack = cubicPulse(cursor.x, 0.1, uv.x) * AMPLITUDE * (1. - cursor.y);
+
+    OutputBuffer[id.xy] = float4(newValue * DAMPING, nextValue + attack, 0, 1);
 }

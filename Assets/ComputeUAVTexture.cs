@@ -9,9 +9,12 @@ public class ComputeUAVTexture : MonoBehaviour
 
 	public int size = 256;
 	
-	[Range(0.01f, .1f)]
-	public float simSpeed = 1.0f;
-	
+	[Range(0f, 1f)]
+	public float simulationSpeed = 1.0f;
+
+	private float simSpeed = .025f;
+	private float simSpeedMax = .01f;
+	private float simSpeedMin = .03f;
 
 	private int ComputeFluid;
 	private RenderTexture texture;
@@ -21,9 +24,12 @@ public class ComputeUAVTexture : MonoBehaviour
 
 	void Start () 
 	{
+
 		ComputeFluid = shader.FindKernel ("ComputeFluid");
 		
-		texture = new RenderTexture(size, size, 16, RenderTextureFormat.ARGB32);
+		// generate 1 pixel wide texture
+		texture = new RenderTexture(size, 1, 16, RenderTextureFormat.ARGBHalf);
+		texture.wrapMode = TextureWrapMode.Mirror;
 		texture.enableRandomWrite = true;
 		texture.Create();
 
@@ -33,20 +39,18 @@ public class ComputeUAVTexture : MonoBehaviour
 			mat.SetTexture("_MainTex", texture);
 		}
 		
-		shader.SetVector("resolution", new Vector2(size, size));
+		shader.SetVector("resolution", new Vector2(size, 1));
 		shader.SetTexture (ComputeFluid, "InputBuffer", texture);
 		shader.SetTexture (ComputeFluid, "OutputBuffer", texture);
 
 		nextUpdate = Time.time;
 		groupSize = Mathf.CeilToInt(size / 8f);
+		simSpeed = Mathf.Lerp(simSpeedMin, simSpeedMax, simulationSpeed);
 	}
 
 	void Update()
 	{
-		if (nextUpdate <= Time.time) {
-			nextUpdate += Mathf.Abs(simSpeed);
-			shader.Dispatch(ComputeFluid, groupSize, groupSize, 1);
-		}
+		RunSimulationStep();
 	}
 
 	void FixedUpdate() 
@@ -62,5 +66,12 @@ public class ComputeUAVTexture : MonoBehaviour
 	void OnDestroy() {
 		texture.DiscardContents();
 		texture.Release();
+	}
+
+	void RunSimulationStep() {
+		if (nextUpdate <= Time.time) {
+			nextUpdate += Mathf.Abs(simSpeed);
+			shader.Dispatch(ComputeFluid, groupSize, 1, 1);
+		}
 	}
 }
