@@ -5,12 +5,14 @@ using UnityEngine;
 public class ComputeUAVTexture : MonoBehaviour 
 {
 	public ComputeShader shader;
-	public Transform cursor;
+	public Material material;
 
 	public int size = 256;
 	
 	[Range(0f, 1f)]
 	public float simulationSpeed = 1.0f;
+
+	private Camera cam;
 
 	private float simSpeed = .025f;
 	private float simSpeedMax = .01f;
@@ -18,14 +20,18 @@ public class ComputeUAVTexture : MonoBehaviour
 
 	private int ComputeFluid;
 	private RenderTexture texture;
-	private Material mat;
 	private float nextUpdate;
 	private int groupSize;
 
+	private Material mat;
+	private ComputeShader cs;
+
 	void Start () 
 	{
+        cam = Camera.main;
+		cs = Instantiate(shader);
 
-		ComputeFluid = shader.FindKernel ("ComputeFluid");
+		ComputeFluid = cs.FindKernel ("ComputeFluid");
 		
 		// generate 1 pixel wide texture
 		texture = new RenderTexture(size, 1, 16, RenderTextureFormat.ARGBHalf);
@@ -33,15 +39,16 @@ public class ComputeUAVTexture : MonoBehaviour
 		texture.enableRandomWrite = true;
 		texture.Create();
 
-		mat = GetComponent<Renderer>().material;
+		mat = Instantiate<Material>(material);
 
 		if (mat != null) {
 			mat.SetTexture("_MainTex", texture);
+			GetComponent<Renderer>().material = mat;
 		}
 		
-		shader.SetVector("resolution", new Vector2(size, 1));
-		shader.SetTexture (ComputeFluid, "InputBuffer", texture);
-		shader.SetTexture (ComputeFluid, "OutputBuffer", texture);
+		cs.SetVector("resolution", new Vector2(size, 1));
+		cs.SetTexture (ComputeFluid, "InputBuffer", texture);
+		cs.SetTexture (ComputeFluid, "OutputBuffer", texture);
 
 		nextUpdate = Time.time;
 		groupSize = Mathf.CeilToInt(size / 8f);
@@ -53,16 +60,6 @@ public class ComputeUAVTexture : MonoBehaviour
 		RunSimulationStep();
 	}
 
-	void FixedUpdate() 
-	{
-		Vector2 npos = new Vector2(
-			cursor.position.x / transform.localScale.x,
-			cursor.position.y / transform.localScale.z
-		);
-
-		shader.SetVector("mouse", npos);
-	}
-
 	void OnDestroy() {
 		texture.DiscardContents();
 		texture.Release();
@@ -71,7 +68,29 @@ public class ComputeUAVTexture : MonoBehaviour
 	void RunSimulationStep() {
 		if (nextUpdate <= Time.time) {
 			nextUpdate += Mathf.Abs(simSpeed);
-			shader.Dispatch(ComputeFluid, groupSize, 1, 1);
+		
+			cs.Dispatch(ComputeFluid, groupSize, 1, 1);
 		}
 	}
+
+
+	void OnMouseUp() {
+		cs.SetVector("mouse", new Vector4(-1000.0f, -1000.0f, -1.0f, -1.0f));
+	}
+
+	void OnMouseDown()
+    {
+		RaycastHit hit;
+		if (Input.GetMouseButton(0))
+		{
+			if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit))
+				Debug.Log(gameObject.name);
+				cs.SetVector("mouse", new Vector4(
+					hit.textureCoord.x, hit.textureCoord.y, 1.0f, 1.0f));
+		}
+		else
+		{
+			cs.SetVector("mouse", new Vector4(-1000.0f, -1000.0f, -1.0f, -1.0f));
+		}
+    }
 }

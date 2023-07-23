@@ -36,7 +36,7 @@ Shader "Unlit/MaskShader"
             float4 _MainTex_ST;
 
             float plot(float2 st, float y){
-                return smoothstep( 0, .01, st.y - y);
+                return smoothstep( 0, 4, st.y - y);
             }
 
             v2f vert (appdata v)

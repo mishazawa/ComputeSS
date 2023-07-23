@@ -7,9 +7,14 @@ Texture2D<float4> InputBuffer;
 SamplerState samplerInputBuffer;
 RWTexture2D<float4> OutputBuffer;
 
-float2 mouse = float2(0, 0);
+float3 mouse = float3(0, 0, 0);
 float2 resolution = float2(32, 1);
 bool action = false;
+
+float2 onClick(float3 mouse) {
+    if (mouse.z > 0.) return mouse.xy;
+  	return float2(.0, .0);
+}
 
 float cubicPulse( float c, float w, float x ){
     x = abs(x - c);
@@ -18,12 +23,17 @@ float cubicPulse( float c, float w, float x ){
     return 1. - x*x*(3.0-2.0*x);
 }
 
+float plot(float2 st, float pct){
+  return  smoothstep( pct-0.02, pct, st.y) -
+          smoothstep( pct, pct+0.02, st.y);
+}
+
 [numthreads(32, 1, 1)]
 void ComputeFluid (uint3 id : SV_DispatchThreadID)
 {
     float2 offset    = float2(1 / resolution.x, 0);
     float2 uv        = float2(id.xy) / resolution;
-    float2 cursor    = (mouse + .5);
+    float2 cursor    = onClick(mouse);
 
     float4 data      = InputBuffer.SampleLevel(samplerInputBuffer, uv, 0);
     float4 dataLeft  = InputBuffer.SampleLevel(samplerInputBuffer, uv - offset, 0);
@@ -33,7 +43,12 @@ void ComputeFluid (uint3 id : SV_DispatchThreadID)
 
     float nextValue = data.x;
 
-    float attack = cubicPulse(cursor.x, 0.1, uv.x) * AMPLITUDE * (1. - cursor.y);
+    float attack = 0;
+    
+    if (cursor.x > 0.) {
+        attack = 1 - plot(uv, cubicPulse(cursor.x, 0.1, uv.x));
+        
+    }
 
     OutputBuffer[id.xy] = float4(newValue * DAMPING, nextValue + attack, 0, 1);
 }
