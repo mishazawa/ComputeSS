@@ -47,7 +47,6 @@ public class ComputeUAVTexture : MonoBehaviour
 		}
 		
 		cs.SetVector("resolution", new Vector2(size, 1));
-		cs.SetTexture (ComputeFluid, "InputBuffer", texture);
 		cs.SetTexture (ComputeFluid, "OutputBuffer", texture);
 
 		nextUpdate = Time.time;

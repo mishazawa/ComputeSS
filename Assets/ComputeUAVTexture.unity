@@ -381,7 +381,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: 9a57434a19e684c4f9a2fce939450922, type: 3}
-  material: {fileID: 2100000, guid: 96e975cd6340d4c559e7d8d2ba4b112d, type: 2}
+  material: {fileID: 2100000, guid: 5132356b01a678c43996deafd4f9b485, type: 2}
   size: 512
   simulationSpeed: 0.74
 --- !u!64 &420556014
@@ -1012,7 +1012,7 @@ Transform:
   m_GameObject: {fileID: 2084085131}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 57.4, y: -5.7, z: -8.7}
+  m_LocalPosition: {x: 10.8, y: 1.6, z: -8.7}
   m_LocalScale: {x: 23.75, y: 21.16, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -4,8 +4,6 @@
 #define AMPLITUDE .5
 #define mod(x, y) (x - y * floor(x / y))
 
-Texture2D<float4> InputBuffer;
-SamplerState samplerInputBuffer;
 RWTexture2D<float4> OutputBuffer;
 
 float3 mouse = float3(0, 0, 0);
@@ -22,13 +20,14 @@ float plot(float2 st, float pct);
 [numthreads(32, 1, 1)]
 void ComputeFluid (uint3 id : SV_DispatchThreadID)
 {
-    float2 offset    = float2(1 / resolution.x, 0);
+    uint3 offset    = uint3(1, 0, 0);
+
     float2 uv        = float2(id.xy) / resolution;
     float2 cursor    = onClick(mouse);
-
-    float4 data      = InputBuffer.SampleLevel(samplerInputBuffer, uv, 0);
-    float4 dataLeft  = InputBuffer.SampleLevel(samplerInputBuffer, uv - offset, 0);
-    float4 dataRight = InputBuffer.SampleLevel(samplerInputBuffer, uv + offset, 0);
+   
+    float4 data      = OutputBuffer[id.xy];
+    float4 dataLeft  = OutputBuffer[id.xy - offset];
+    float4 dataRight = OutputBuffer[id.xy + offset];
 
     float newValue  = dataLeft.x + dataRight.x - data.y;
 
